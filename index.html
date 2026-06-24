@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>사다리타기 · 아임일리터</title>
+<style>
+  :root {
+    --primary: #F6DDDA;
+    --secondary: #EB5E75;
+    --secondary-dark: #d44d63;
+    --secondary-light: #fde8ec;
+    --black: #1a1a1a;
+    --gray-100: #f5f5f5;
+    --gray-200: #ebebeb;
+    --gray-400: #b0b0b0;
+    --gray-600: #6b6b6b;
+    --white: #ffffff;
+    --radius-sm: 12px;
+    --radius-md: 20px;
+    --radius-lg: 28px;
+    --radius-xl: 36px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100dvh;
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+
+  #app {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100dvh;
+    background: var(--white);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.15);
+  }
+
+  /* ── Screens ── */
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--white);
+    transition: transform 0.32s cubic-bezier(.4,0,.2,1), opacity 0.32s ease;
+    will-change: transform, opacity;
+  }
+  .screen.hidden { transform: translateX(100%); opacity: 0; pointer-events: none; }
+  .screen.slide-out { transform: translateX(-40%); opacity: 0; pointer-events: none; }
+
+  /* ── Status bar ── */
+  .status-bar {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .status-time { font-size: 15px; font-weight: 600; }
+  .status-icons { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+
+  /* ── Header ── */
+  .header {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    justify-content: space-between;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--gray-200);
+  }
+  .header-btn {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: none; cursor: pointer;
+    border-radius: 50%; transition: background 0.15s;
+    font-size: 20px; color: var(--black);
+  }
+  .header-btn:active { background: var(--gray-100); }
+  .header-title { font-size: 17px; font-weight: 700; color: var(--black); }
+
+  /* ── Scroll content ── */
+  .scroll-content { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ════════════════ S1: 설정 ════════════════ */
+  #s1 .hero {
+    margin: 24px 20px 0;
+    background: var(--primary);
+    border-radius: var(--radius-xl);
+    height: 180px;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px;
+  }
+  #s1 .hero-emoji { font-size: 48px; }
+  #s1 .hero-sub { font-size: 13px; color: var(--secondary); font-weight: 500; }
+
+  #s1 .title-block { text-align: center; padding: 24px 20px 8px; }
+  #s1 .title-block h1 { font-size: 26px; font-weight: 700; color: var(--black); }
+  #s1 .title-block p { font-size: 14px; color: var(--gray-600); margin-top: 6px; }
+
+  .stepper-group { padding: 0 20px; margin-bottom: 20px; }
+  .stepper-label-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .stepper-label { font-size: 15px; font-weight: 700; color: var(--black); }
+  .stepper-helper { font-size: 13px; color: var(--gray-400); }
+  .stepper {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--gray-100); border-radius: var(--radius-lg); padding: 14px 20px;
+  }
+  .stepper-btn {
+    width: 44px; height: 44px; border-radius: 50%;
+    border: none; background: var(--white);
+    font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    color: var(--black); font-weight: 400; transition: all 0.15s; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    user-select: none;
+  }
+  .stepper-btn:active { transform: scale(0.94); }
+  .stepper-btn.disabled { opacity: 0.35; cursor: not-allowed; }
+  .stepper-btn.disabled:active { transform: none; }
+  .stepper-val { font-size: 32px; font-weight: 700; color: var(--black); min-width: 60px; text-align: center; }
+
+  .bottom-area { padding: 12px 20px 40px; flex-shrink: 0; }
+  .cta-btn {
+    width: 100%; height: 60px; border-radius: var(--radius-xl);
+    border: none; font-size: 17px; font-weight: 700;
+    cursor: pointer; transition: all 0.18s; display: flex; align-items: center; justify-content: center;
+    letter-spacing: -0.3px;
+  }
+  .cta-btn.primary { background: var(--secondary); color: var(--white); }
+  .cta-btn.primary:active { background: var(--secondary-dark); transform: scale(0.98); }
+  .cta-btn.secondary { background: var(--gray-100); color: var(--gray-600); }
+  .cta-btn.secondary:active { background: var(--gray-200); }
+
+  /* ════════════════ S2: 사다리 진행 ════════════════ */
+  #s2 .progress-chip {
+    font-size: 14px; font-weight: 600; color: var(--gray-600);
+    background: var(--gray-100); padding: 6px 14px; border-radius: 20px;
+  }
+
+  #s2 .game-area { flex: 1; display: flex; flex-direction: column; padding: 16px 16px 0; overflow: hidden; }
+
+  /* User row */
+  .user-row { display: flex; gap: 0; margin-bottom: 8px; }
+  .user-chip {
+    flex: 1; height: 48px; display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; font-size: 15px; font-weight: 700; color: var(--gray-600);
+    background: var(--gray-100); margin: 0 3px; transition: all 0.2s;
+    position: relative;
+  }
+  .user-chip.active { background: var(--secondary); color: var(--white); }
+  .user-chip.done-win { background: var(--secondary-light); color: var(--secondary); }
+  .user-chip.done-lose { background: var(--gray-200); color: var(--gray-400); }
+
+  /* Ladder canvas */
+  #ladder-canvas { flex: 1; display: block; width: 100%; }
+
+  /* Destination row */
+  .dest-row { display: flex; gap: 0; margin-top: 8px; margin-bottom: 12px; }
+  .dest-chip {
+    flex: 1; height: 52px; display: flex; align-items: center; justify-content: center;
+    border-radius: 12px; font-size: 13px; font-weight: 700; margin: 0 3px;
+    background: var(--gray-100); color: var(--gray-400); transition: all 0.3s;
+    flex-direction: column; gap: 2px;
+  }
+  .dest-chip .dest-num { font-size: 11px; font-weight: 500; }
+  .dest-chip.revealed-win { background: var(--secondary-light); color: var(--secondary); }
+  .dest-chip.revealed-lose { background: var(--gray-200); color: var(--gray-600); }
+
+  /* Speed + Skip bar */
+  .control-bar {
+    display: flex; gap: 8px; align-items: center;
+    padding: 12px 16px 36px;
+    flex-shrink: 0;
+  }
+  .speed-label { font-size: 13px; font-weight: 600; color: var(--gray-600); white-space: nowrap; }
+  .speed-group { display: flex; background: var(--gray-100); border-radius: 14px; padding: 4px; gap: 2px; flex: 1; }
+  .speed-pill {
+    flex: 1; height: 36px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; background: transparent; color: var(--gray-400);
+    transition: all 0.18s;
+  }
+  .speed-pill.active { background: var(--white); color: var(--black); box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+
+  /* Shortcut banner */
+  #shortcut-banner {
+    position: absolute; left: 20px; right: 20px; bottom: 110px;
+    background: var(--secondary); color: var(--white);
+    border-radius: var(--radius-lg); padding: 14px 20px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 15px; font-weight: 700;
+    opacity: 0; transform: translateY(10px);
+    transition: all 0.3s; pointer-events: none;
+  }
+  #shortcut-banner.show { opacity: 1; transform: translateY(0); }
+  #shortcut-banner .banner-emoji { font-size: 20px; }
+
+  /* ════════════════ S3: 결과 ════════════════ */
+  #s3 .result-hero {
+    margin: 20px 20px 0;
+    background: var(--primary);
+    border-radius: var(--radius-xl);
+    height: 160px;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 6px;
+  }
+  #s3 .result-hero-emoji { font-size: 44px; }
+  #s3 .result-hero-text { font-size: 13px; font-weight: 600; color: var(--secondary); }
+
+  #s3 .result-title-block { text-align: center; padding: 20px 20px 0; }
+  #s3 .result-title { font-size: 24px; font-weight: 700; }
+  #s3 .result-sub { font-size: 14px; color: var(--secondary); font-weight: 600; margin-top: 4px; }
+
+  .result-section { padding: 20px 20px 0; }
+  .result-section-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px;
+  }
+  .result-section-title { font-size: 14px; font-weight: 700; color: var(--black); }
+  .replay-btn {
+    font-size: 13px; font-weight: 600; color: var(--secondary);
+    background: var(--secondary-light); border: none; cursor: pointer;
+    padding: 6px 12px; border-radius: 20px; transition: background 0.15s;
+  }
+  .replay-btn:active { background: #f9c5cf; }
+
+  .result-card {
+    display: flex; align-items: center; padding: 14px 16px;
+    border-radius: var(--radius-md); margin-bottom: 8px; gap: 12px;
+    transition: all 0.25s;
+  }
+  .result-card.win { background: var(--secondary-light); }
+  .result-card.lose { background: var(--gray-100); }
+  .result-card-badge {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; font-weight: 700; flex-shrink: 0;
+  }
+  .result-card.win .result-card-badge { background: var(--secondary); color: var(--white); }
+  .result-card.lose .result-card-badge { background: var(--gray-400); color: var(--white); }
+  .result-card-name { font-size: 16px; font-weight: 700; flex: 1; color: var(--black); }
+  .result-card.lose .result-card-name { color: var(--gray-600); }
+  .result-card-status { font-size: 13px; font-weight: 700; }
+  .result-card.win .result-card-status { color: var(--secondary); }
+  .result-card.lose .result-card-status { color: var(--gray-400); }
+
+  .loser-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; background: var(--gray-100); border-radius: var(--radius-md);
+    cursor: pointer; border: none; width: 100%; transition: background 0.15s;
+  }
+  .loser-toggle:active { background: var(--gray-200); }
+  .loser-toggle-left { font-size: 14px; font-weight: 600; color: var(--gray-600); }
+  .loser-toggle-chevron { font-size: 13px; color: var(--gray-400); transition: transform 0.2s; }
+  .loser-toggle-chevron.open { transform: rotate(180deg); }
+  .loser-list { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+  .loser-list.open { max-height: 400px; }
+
+  .result-bottom { padding: 20px 20px 40px; display: flex; gap: 10px; }
+  .result-bottom .cta-btn { flex: 1; height: 56px; font-size: 15px; }
+
+  /* ════════════════ S4: 리플레이 ════════════════ */
+  #s4 .replay-hint {
+    text-align: center; font-size: 13px; color: var(--gray-400);
+    padding: 8px 20px 0;
+  }
+  #s4 .replay-game-area { flex: 1; display: flex; flex-direction: column; padding: 12px 16px 0; overflow: hidden; }
+  #replay-canvas { flex: 1; display: block; width: 100%; }
+
+  .user-selector { padding: 10px 16px; flex-shrink: 0; }
+  .user-selector-inner {
+    display: flex; background: var(--gray-100); border-radius: 14px;
+    padding: 4px; gap: 2px;
+  }
+  .selector-pill {
+    flex: 1; height: 38px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; background: transparent; color: var(--gray-400);
+    transition: all 0.18s;
+  }
+  .selector-pill.active { background: var(--secondary); color: var(--white); box-shadow: 0 2px 6px rgba(235,94,117,0.3); }
+
+  /* ════════════════ M1: 종료 확인 모달 ════════════════ */
+  #modal-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    padding: 24px;
+  }
+  #modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal-box {
+    background: var(--white); border-radius: 28px;
+    padding: 32px 28px; width: 100%; max-width: 360px;
+    text-align: center;
+    transform: scale(0.9) translateY(10px);
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+  }
+  #modal-overlay.show .modal-box { transform: scale(1) translateY(0); }
+  .modal-icon {
+    width: 64px; height: 64px; background: var(--secondary-light);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; margin: 0 auto 16px;
+  }
+  .modal-title { font-size: 19px; font-weight: 700; color: var(--black); margin-bottom: 8px; }
+  .modal-body { font-size: 14px; color: var(--gray-600); line-height: 1.6; margin-bottom: 24px; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns .cta-btn { flex: 1; height: 52px; font-size: 15px; border-radius: var(--radius-md); }
+
+  /* ════════════════ Animations ════════════════ */
+  @keyframes pop-in {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .pop-in { animation: pop-in 0.25s cubic-bezier(.4,0,.2,1) forwards; }
+
+  @keyframes confetti-fall {
+    0% { opacity: 1; transform: translateY(-20px) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(80px) rotate(360deg); }
+  }
+  .confetti-piece {
+    position: absolute; width: 8px; height: 8px;
+    border-radius: 2px; animation: confetti-fall 0.8s ease-out forwards;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══════════════════════════════ S1: 설정 ═══════════════════════════════ -->
+  <div class="screen" id="s1">
+    <div class="status-bar">
+      <span class="status-time" id="clock">9:41</span>
+      <span class="status-icons">🔋</span>
+    </div>
+    <div class="header">
+      <button class="header-btn" onclick="goHome()">✕</button>
+      <span class="header-title">사다리타기</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="scroll-content">
+      <div id="s1" style="all:unset;display:contents">
+        <div class="hero" style="margin:24px 20px 0;background:var(--primary);border-radius:var(--radius-xl);height:180px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+          <div style="font-size:52px">🎯</div>
+          <div style="font-size:13px;color:var(--secondary);font-weight:600;">아임일리터 사다리 게임</div>
+        </div>
+        <div class="title-block" style="text-align:center;padding:24px 20px 8px;">
+          <h1 style="font-size:26px;font-weight:700;color:var(--black);">사다리 게임</h1>
+          <p style="font-size:14px;color:var(--gray-600);margin-top:6px;">인원과 당첨자 수를 정하세요</p>
+        </div>
+        <div style="height:20px"></div>
+        <div class="stepper-group">
+          <div class="stepper-label-row">
+            <span class="stepper-label">참여 인원</span>
+            <span class="stepper-helper" id="players-helper">2~10명</span>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn" id="btn-players-minus" onclick="adjustPlayers(-1)">−</button>
+            <span class="stepper-val" id="val-players">6</span>
+            <button class="stepper-btn" id="btn-players-plus" onclick="adjustPlayers(1)">+</button>
+          </div>
+        </div>
+        <div class="stepper-group">
+          <div class="stepper-label-row">
+            <span class="stepper-label">당첨자 수</span>
+            <span class="stepper-helper" id="winners-helper">최대 5명</span>
+          </div>
+          <div class="stepper">
+            <button class="stepper-btn" id="btn-winners-minus" onclick="adjustWinners(-1)">−</button>
+            <span class="stepper-val" id="val-winners">2</span>
+            <button class="stepper-btn" id="btn-winners-plus" onclick="adjustWinners(1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="bottom-area">
+      <button class="cta-btn primary" onclick="startGame()">시작하기</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ S2: 사다리 진행 ═══════════════════════════════ -->
+  <div class="screen hidden" id="s2">
+    <div class="status-bar">
+      <span class="status-time" id="clock2">9:41</span>
+      <span class="status-icons">🔋</span>
+    </div>
+    <div class="header">
+      <button class="header-btn" onclick="requestExit()">✕</button>
+      <span class="header-title" id="progress-title">1 / 6 진행 중</span>
+      <div style="width:40px"></div>
+    </div>
+    <div class="game-area" id="s2-game-area">
+      <div class="user-row" id="user-row"></div>
+      <canvas id="ladder-canvas"></canvas>
+      <div class="dest-row" id="dest-row"></div>
+    </div>
+    <div class="control-bar">
+      <span class="speed-label">속도</span>
+      <div class="speed-group">
+        <button class="speed-pill active" onclick="setSpeed(1, this)">1x</button>
+        <button class="speed-pill" onclick="setSpeed(2, this)">2x</button>
+        <button class="speed-pill" onclick="setSpeed(0, this)">즉시</button>
+      </div>
+    </div>
+    <div id="shortcut-banner">
+      <span class="banner-emoji">🎉</span>
+      <span id="banner-text">당첨자가 모두 결정됐어요!</span>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ S3: 결과 ═══════════════════════════════ -->
+  <div class="screen hidden" id="s3">
+    <div class="status-bar">
+      <span class="status-time" id="clock3">9:41</span>
+      <span class="status-icons">🔋</span>
+    </div>
+    <div class="header">
+      <div style="width:40px"></div>
+      <span class="header-title">결과</span>
+      <button class="header-btn" onclick="goHome()">✕</button>
+    </div>
+    <div class="scroll-content" id="s3-content">
+      <div class="result-hero">
+        <div class="result-hero-emoji">🎉</div>
+        <div class="result-hero-text">당첨자 발표</div>
+      </div>
+      <div class="result-title-block">
+        <div class="result-title">축하합니다!</div>
+        <div class="result-sub" id="result-sub-text"></div>
+      </div>
+      <div class="result-section">
+        <div class="result-section-header">
+          <span class="result-section-title" id="winner-section-title">당첨 · 0명</span>
+          <button class="replay-btn" onclick="goToReplay()">↻ 사다리 다시 보기</button>
+        </div>
+        <div id="winner-cards"></div>
+      </div>
+      <div class="result-section" style="padding-bottom:0">
+        <div class="result-section-header">
+          <span class="result-section-title" id="loser-section-title" style="color:var(--gray-600)">미당첨 · 0명</span>
+        </div>
+        <button class="loser-toggle" onclick="toggleLosers()">
+          <span class="loser-toggle-left" id="loser-names">1번, 3번, 4번, 6번</span>
+          <span class="loser-toggle-chevron" id="loser-chevron">▼</span>
+        </button>
+        <div class="loser-list" id="loser-list"></div>
+      </div>
+      <div style="height:20px"></div>
+    </div>
+    <div class="result-bottom">
+      <button class="cta-btn secondary" onclick="goHome()">새로 설정</button>
+      <button class="cta-btn primary" onclick="replayWithSameConfig()">같은 조건으로 다시</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ S4: 리플레이 ═══════════════════════════════ -->
+  <div class="screen hidden" id="s4">
+    <div class="status-bar">
+      <span class="status-time" id="clock4">9:41</span>
+      <span class="status-icons">🔋</span>
+    </div>
+    <div class="header">
+      <button class="header-btn" onclick="goTo('s3')">←</button>
+      <span class="header-title">사다리 리플레이</span>
+      <div style="width:40px"></div>
+    </div>
+    <p class="replay-hint">번호를 탭해 궤적을 확인하세요</p>
+    <div class="replay-game-area">
+      <div class="user-row" id="replay-user-row"></div>
+      <canvas id="replay-canvas"></canvas>
+      <div class="dest-row" id="replay-dest-row"></div>
+    </div>
+    <div class="user-selector">
+      <div class="user-selector-inner" id="selector-pills"></div>
+    </div>
+    <div class="bottom-area" style="padding-top:12px">
+      <button class="cta-btn secondary" onclick="goTo('s3')">결과로 돌아가기</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ M1: 종료 확인 모달 ═══════════════════════════════ -->
+  <div id="modal-overlay" onclick="closeModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-icon">⚠️</div>
+      <div class="modal-title">게임을 종료하시겠어요?</div>
+      <div class="modal-body">진행 중인 결과는 사라집니다.</div>
+      <div class="modal-btns">
+        <button class="cta-btn secondary" onclick="hideModal()">계속하기</button>
+        <button class="cta-btn primary" onclick="confirmExit()">종료</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const state = {
+  players: 6,
+  winners: 2,
+  speed: 1,         // 0 = instant, 1 = 1x, 2 = 2x
+  currentUser: 0,
+  isRunning: false,
+  animFrame: null,
+  ladderData: null, // { horizontals, paths }
+  results: [],      // index → 'win' | 'lose'
+  replayUser: 0,
+  currentScreen: 's1',
+  prevScreen: null,
+};
+
+// ══════════════════════════════════════════════
+//  CLOCK
+// ══════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const t = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  ['clock','clock2','clock3','clock4'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = t;
+  });
+}
+updateClock(); setInterval(updateClock, 10000);
+
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+function goTo(screen, slideOut=true) {
+  const prev = document.getElementById(state.currentScreen);
+  const next = document.getElementById(screen);
+  if (!next || screen === state.currentScreen) return;
+
+  if (slideOut) prev.classList.add('slide-out');
+  else prev.classList.add('hidden');
+
+  next.classList.remove('hidden', 'slide-out');
+  state.prevScreen = state.currentScreen;
+  state.currentScreen = screen;
+
+  setTimeout(() => {
+    if (slideOut) prev.classList.replace('slide-out','hidden');
+  }, 350);
+}
+
+function goHome() {
+  stopAnimation();
+  goTo('s1', false);
+  resetS1();
+}
+
+// ══════════════════════════════════════════════
+//  S1: SETUP
+// ══════════════════════════════════════════════
+function adjustPlayers(d) {
+  const n = state.players + d;
+  if (n < 2 || n > 10) return;
+  state.players = n;
+  if (state.winners >= n) state.winners = n - 1;
+  renderS1();
+}
+function adjustWinners(d) {
+  const n = state.winners + d;
+  if (n < 1 || n >= state.players) return;
+  state.winners = n;
+  renderS1();
+}
+function renderS1() {
+  document.getElementById('val-players').textContent = state.players;
+  document.getElementById('val-winners').textContent = state.winners;
+  document.getElementById('winners-helper').textContent = `최대 ${state.players - 1}명`;
+  setDisabled('btn-players-minus', state.players <= 2);
+  setDisabled('btn-players-plus', state.players >= 10);
+  setDisabled('btn-winners-minus', state.winners <= 1);
+  setDisabled('btn-winners-plus', state.winners >= state.players - 1);
+}
+function setDisabled(id, val) {
+  const el = document.getElementById(id);
+  el.classList.toggle('disabled', val);
+}
+function resetS1() { state.players = 6; state.winners = 2; renderS1(); }
+renderS1();
+
+// ══════════════════════════════════════════════
+//  LADDER ENGINE
+// ══════════════════════════════════════════════
+function generateLadder(n, winCount) {
+  // 1. Decide winners (random)
+  const allIdx = Array.from({length: n}, (_,i) => i);
+  const shuffled = allIdx.sort(() => Math.random() - 0.5);
+  const winnerStartCols = new Set(shuffled.slice(0, winCount));
+
+  // 2. Generate destinations: assign 'win'/'lose' randomly to bottom slots
+  const destShuffled = [...allIdx].sort(() => Math.random() - 0.5);
+  const winDests = new Set(destShuffled.slice(0, winCount));
+
+  // 3. Generate horizontal rungs
+  const rowCount = Math.ceil(n * 1.5) + 2;
+  const rows = [];
+  for (let r = 0; r < rowCount; r++) {
+    const usedCols = new Set();
+    const rowRungs = [];
+    for (let c = 0; c < n - 1; c++) {
+      if (!usedCols.has(c) && !usedCols.has(c+1) && Math.random() > 0.45) {
+        rowRungs.push(c);
+        usedCols.add(c); usedCols.add(c+1);
+      }
+    }
+    rows.push(rowRungs);
+  }
+
+  // 4. Trace each column to get final path
+  const paths = {};
+  const finalDest = Array(n).fill(0);
+  for (let col = 0; col < n; col++) {
+    let cur = col;
+    const path = [{ col: cur, row: 0 }];
+    for (let r = 0; r < rows.length; r++) {
+      const rungs = rows[r];
+      if (rungs.includes(cur)) { cur += 1; path.push({ col: cur, row: r+1, dir: 'right' }); }
+      else if (rungs.includes(cur - 1)) { cur -= 1; path.push({ col: cur, row: r+1, dir: 'left' }); }
+      else { path.push({ col: cur, row: r+1 }); }
+    }
+    paths[col] = path;
+    finalDest[col] = cur;
+  }
+
+  // 5. Build results: winner if finalDest[col] in winDests
+  const results = Array(n).fill('lose');
+  for (let col = 0; col < n; col++) {
+    if (winDests.has(finalDest[col])) results[col] = 'win';
+  }
+
+  // Ensure winner count matches
+  const actualWins = results.filter(r => r === 'win').length;
+  if (actualWins !== winCount) {
+    // Force fix: assign wins to first winCount finalDest positions
+    results.fill('lose');
+    const usedDests = new Set();
+    let assigned = 0;
+    for (let col = 0; col < n && assigned < winCount; col++) {
+      const d = finalDest[col];
+      if (!usedDests.has(d)) { results[col] = 'win'; usedDests.add(d); assigned++; }
+    }
+  }
+
+  return { rows, paths, finalDest, results, winDests };
+}
+
+// ══════════════════════════════════════════════
+//  DRAWING
+// ══════════════════════════════════════════════
+function drawLadder(canvasId, ladderData, n, highlightCol = -1, revealedCols = new Set(), progress = 1) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const { rows, paths, finalDest } = ladderData;
+  const rowCount = rows.length;
+  const colW = W / n;
+  const rowH = H / (rowCount + 1);
+  const cx = col => colW * col + colW / 2;
+  const cy = row => rowH * (row + 1);
+
+  // Vertical lines
+  ctx.strokeStyle = '#e0e0e0';
+  ctx.lineWidth = 2;
+  for (let c = 0; c < n; c++) {
+    ctx.beginPath(); ctx.moveTo(cx(c), cy(0)); ctx.lineTo(cx(c), cy(rowCount)); ctx.stroke();
+  }
+
+  // Horizontal rungs
+  ctx.strokeStyle = '#d0d0d0';
+  ctx.lineWidth = 2.5;
+  rows.forEach((rungs, r) => {
+    rungs.forEach(c => {
+      ctx.beginPath(); ctx.moveTo(cx(c), cy(r+1)); ctx.lineTo(cx(c+1), cy(r+1)); ctx.stroke();
+    });
+  });
+
+  // Highlight paths already completed
+  revealedCols.forEach(col => {
+    if (col === highlightCol) return;
+    const color = ladderData.results[col] === 'win' ? '#f9c5cf' : '#e5e5e5';
+    drawPath(ctx, paths[col], cx, cy, color, 2, 1);
+  });
+
+  // Highlight current user's path
+  if (highlightCol >= 0 && paths[highlightCol]) {
+    drawPath(ctx, paths[highlightCol], cx, cy, '#EB5E75', 4, progress);
+    // Draw dot at current progress position
+    if (progress < 1) {
+      const pathLen = paths[highlightCol].length - 1;
+      const pIdx = Math.min(Math.floor(progress * pathLen), pathLen - 1);
+      const p0 = paths[highlightCol][pIdx];
+      const p1 = paths[highlightCol][Math.min(pIdx+1, pathLen)];
+      const frac = (progress * pathLen) - pIdx;
+      const dotX = cx(p0.col) + (cx(p1.col) - cx(p0.col)) * frac;
+      const dotY = cy(p0.row) + (cy(p1.row) - cy(p0.row)) * frac;
+      ctx.beginPath(); ctx.arc(dotX, dotY, 7, 0, Math.PI*2);
+      ctx.fillStyle = '#EB5E75'; ctx.fill();
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+  }
+}
+
+function drawPath(ctx, path, cx, cy, color, lw, progress) {
+  if (!path || path.length < 2) return;
+  const total = path.length - 1;
+  const drawTo = progress * total;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lw;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx(path[0].col), cy(path[0].row));
+
+  for (let i = 0; i < total; i++) {
+    if (i >= drawTo) break;
+    const p0 = path[i], p1 = path[i+1];
+    const frac = Math.min(1, drawTo - i);
+    const tx = cx(p0.col) + (cx(p1.col) - cx(p0.col)) * frac;
+    const ty = cy(p0.row) + (cy(p1.row) - cy(p0.row)) * frac;
+    ctx.lineTo(tx, ty);
+  }
+  ctx.stroke();
+}
+
+// ══════════════════════════════════════════════
+//  S2: GAME FLOW
+// ══════════════════════════════════════════════
+let animProgress = 0;
+let animStart = null;
+let revealedCols = new Set();
+let allDone = false;
+
+function startGame() {
+  const n = state.players;
+  state.ladderData = generateLadder(n, state.winners);
+  state.results = state.ladderData.results;
+  state.currentUser = 0;
+  revealedCols = new Set();
+  allDone = false;
+
+  buildUserRow(n);
+  buildDestRow(n);
+  updateProgressTitle();
+  goTo('s2');
+
+  // Setup canvas after transition
+  setTimeout(() => {
+    resizeCanvas('ladder-canvas');
+    drawLadder('ladder-canvas', state.ladderData, n, -1, revealedCols);
+    runNextUser();
+  }, 380);
+}
+
+function buildUserRow(n) {
+  const row = document.getElementById('user-row');
+  row.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'user-chip';
+    chip.id = `user-chip-${i}`;
+    chip.textContent = i + 1;
+    row.appendChild(chip);
+  }
+}
+
+function buildDestRow(n) {
+  const row = document.getElementById('dest-row');
+  row.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'dest-chip';
+    chip.id = `dest-chip-${i}`;
+    chip.innerHTML = `<span>?</span><span class="dest-num">${i+1}</span>`;
+    row.appendChild(chip);
+  }
+}
+
+function updateProgressTitle() {
+  document.getElementById('progress-title').textContent =
+    `${state.currentUser + 1} / ${state.players} 진행 중`;
+}
+
+function runNextUser() {
+  if (allDone) return;
+  const col = state.currentUser;
+  const n = state.players;
+
+  // Highlight current user chip
+  for (let i = 0; i < n; i++) {
+    const c = document.getElementById(`user-chip-${i}`);
+    if (i < col) {
+      c.classList.remove('active');
+      c.classList.add(state.results[i] === 'win' ? 'done-win' : 'done-lose');
+    } else if (i === col) {
+      c.classList.remove('done-win','done-lose');
+      c.classList.add('active');
+    } else {
+      c.classList.remove('active','done-win','done-lose');
+    }
+  }
+
+  if (state.speed === 0) {
+    // Instant mode
+    revealedCols.add(col);
+    revealDest(col);
+    drawLadder('ladder-canvas', state.ladderData, n, -1, revealedCols);
+    finishUser(col);
+    return;
+  }
+
+  const rowCount = state.ladderData.rows.length;
+  const pathLen = state.ladderData.paths[col].length;
+  const baseMs = 1200 / rowCount * pathLen;
+  const durationMs = baseMs / state.speed;
+
+  animProgress = 0; animStart = null;
+  state.isRunning = true;
+
+  function step(ts) {
+    if (!animStart) animStart = ts;
+    animProgress = Math.min((ts - animStart) / durationMs, 1);
+
+    drawLadder('ladder-canvas', state.ladderData, n, col, revealedCols, animProgress);
+
+    if (animProgress < 1) {
+      state.animFrame = requestAnimationFrame(step);
+    } else {
+      revealedCols.add(col);
+      revealDest(col);
+      drawLadder('ladder-canvas', state.ladderData, n, -1, revealedCols);
+      finishUser(col);
+    }
+  }
+  state.animFrame = requestAnimationFrame(step);
+}
+
+function revealDest(col) {
+  const destCol = state.ladderData.finalDest[col];
+  const chip = document.getElementById(`dest-chip-${destCol}`);
+  const isWin = state.results[col] === 'win';
+  chip.classList.remove('revealed-win','revealed-lose');
+  chip.classList.add(isWin ? 'revealed-win' : 'revealed-lose');
+  chip.innerHTML = `<span>${isWin ? '당첨' : '꽝'}</span><span class="dest-num">${destCol+1}</span>`;
+  chip.classList.add('pop-in');
+  setTimeout(() => chip.classList.remove('pop-in'), 300);
+}
+
+function finishUser(col) {
+  state.isRunning = false;
+  const winCount = state.results.filter(r => r === 'win').length;
+  const doneWins = [...revealedCols].filter(c => state.results[c] === 'win').length;
+
+  // Shortcut: all winners found
+  if (doneWins >= winCount && !allDone) {
+    allDone = true;
+    const remaining = state.players - revealedCols.size;
+
+    if (remaining > 0) {
+      // Show shortcut banner
+      const banner = document.getElementById('shortcut-banner');
+      document.getElementById('banner-text').textContent = '당첨자가 모두 결정됐어요!';
+      banner.classList.add('show');
+      setTimeout(() => {
+        banner.classList.remove('show');
+        // Mark remaining chips as done
+        for (let i = 0; i < state.players; i++) {
+          if (!revealedCols.has(i)) {
+            const chip = document.getElementById(`user-chip-${i}`);
+            chip.classList.remove('active');
+            chip.classList.add('done-lose');
+            revealedCols.add(i);
+          }
+        }
+        drawLadder('ladder-canvas', state.ladderData, state.players, -1, revealedCols);
+        setTimeout(() => goToResults(), 600);
+      }, 1500);
+    } else {
+      setTimeout(() => goToResults(), 400);
+    }
+    return;
+  }
+
+  if (col + 1 < state.players) {
+    state.currentUser = col + 1;
+    updateProgressTitle();
+    const delay = state.speed === 0 ? 0 : 400 / state.speed;
+    setTimeout(() => runNextUser(), delay);
+  } else {
+    setTimeout(() => goToResults(), 400);
+  }
+}
+
+function setSpeed(val, btn) {
+  state.speed = val;
+  document.querySelectorAll('.speed-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function stopAnimation() {
+  if (state.animFrame) cancelAnimationFrame(state.animFrame);
+  state.isRunning = false;
+}
+
+// ══════════════════════════════════════════════
+//  RESULTS
+// ══════════════════════════════════════════════
+function goToResults() {
+  const n = state.players;
+  const winners = [], losers = [];
+  for (let i = 0; i < n; i++) {
+    (state.results[i] === 'win' ? winners : losers).push(i);
+  }
+
+  document.getElementById('result-sub-text').textContent =
+    `${winners.length}명이 당첨됐어요`;
+  document.getElementById('winner-section-title').textContent =
+    `당첨 · ${winners.length}명`;
+  document.getElementById('loser-section-title').textContent =
+    `미당첨 · ${losers.length}명`;
+
+  // Winner cards
+  const wc = document.getElementById('winner-cards');
+  wc.innerHTML = '';
+  winners.forEach(i => {
+    const el = document.createElement('div');
+    el.className = 'result-card win pop-in';
+    el.innerHTML = `
+      <div class="result-card-badge">${i+1}</div>
+      <div class="result-card-name">${i+1}번</div>
+      <div class="result-card-status">✓ 당첨</div>`;
+    wc.appendChild(el);
+  });
+
+  // Loser names inline
+  document.getElementById('loser-names').textContent =
+    losers.map(i => `${i+1}번`).join(', ');
+
+  // Loser cards in expandable
+  const ll = document.getElementById('loser-list');
+  ll.innerHTML = '';
+  losers.forEach(i => {
+    const el = document.createElement('div');
+    el.className = 'result-card lose';
+    el.style.marginTop = '8px';
+    el.innerHTML = `
+      <div class="result-card-badge">${i+1}</div>
+      <div class="result-card-name">${i+1}번</div>
+      <div class="result-card-status">미당첨</div>`;
+    ll.appendChild(el);
+  });
+  // Reset toggle
+  document.getElementById('loser-list').classList.remove('open');
+  document.getElementById('loser-chevron').classList.remove('open');
+
+  goTo('s3');
+  launchConfetti();
+}
+
+function toggleLosers() {
+  document.getElementById('loser-list').classList.toggle('open');
+  document.getElementById('loser-chevron').classList.toggle('open');
+}
+
+function replayWithSameConfig() {
+  stopAnimation();
+  state.currentUser = 0;
+  revealedCols = new Set();
+  allDone = false;
+  state.ladderData = generateLadder(state.players, state.winners);
+  state.results = state.ladderData.results;
+
+  buildUserRow(state.players);
+  buildDestRow(state.players);
+  updateProgressTitle();
+  goTo('s2', false);
+
+  setTimeout(() => {
+    resizeCanvas('ladder-canvas');
+    drawLadder('ladder-canvas', state.ladderData, state.players, -1, revealedCols);
+    runNextUser();
+  }, 380);
+}
+
+// ══════════════════════════════════════════════
+//  S4: REPLAY
+// ══════════════════════════════════════════════
+function goToReplay() {
+  const n = state.players;
+  state.replayUser = 0;
+
+  // Build replay user row
+  const rrow = document.getElementById('replay-user-row');
+  rrow.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const chip = document.createElement('div');
+    chip.className = 'user-chip ' + (state.results[i] === 'win' ? 'done-win' : 'done-lose');
+    chip.textContent = i + 1;
+    rrow.appendChild(chip);
+  }
+
+  // Build replay dest row (revealed)
+  const drow = document.getElementById('replay-dest-row');
+  drow.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    // Figure out which start col ends at dest i
+    const startCol = state.ladderData.finalDest.indexOf(i);
+    const isWin = startCol >= 0 && state.results[startCol] === 'win';
+    const chip = document.createElement('div');
+    chip.className = 'dest-chip ' + (isWin ? 'revealed-win' : 'revealed-lose');
+    chip.innerHTML = `<span>${isWin ? '당첨' : '꽝'}</span><span class="dest-num">${i+1}</span>`;
+    drow.appendChild(chip);
+  }
+
+  // Build selector pills
+  const pills = document.getElementById('selector-pills');
+  pills.innerHTML = '';
+  for (let i = 0; i < n; i++) {
+    const p = document.createElement('button');
+    p.className = 'selector-pill' + (i === 0 ? ' active' : '');
+    p.textContent = i + 1;
+    p.onclick = () => selectReplayUser(i);
+    pills.appendChild(p);
+  }
+
+  goTo('s4');
+  setTimeout(() => {
+    resizeCanvas('replay-canvas');
+    drawReplay(0);
+  }, 380);
+}
+
+function selectReplayUser(col) {
+  state.replayUser = col;
+  document.querySelectorAll('.selector-pill').forEach((p, i) => {
+    p.classList.toggle('active', i === col);
+  });
+  drawReplay(col);
+}
+
+function drawReplay(highlightCol) {
+  const n = state.players;
+  const allCols = new Set(Array.from({length:n},(_,i)=>i));
+  drawLadder('replay-canvas', state.ladderData, n, highlightCol, allCols, 1);
+}
+
+// ══════════════════════════════════════════════
+//  M1: EXIT MODAL
+// ══════════════════════════════════════════════
+function requestExit() {
+  if (!state.isRunning && revealedCols.size === 0) { goHome(); return; }
+  stopAnimation();
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function hideModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  // Resume animation if it was running
+  if (!allDone && state.currentUser < state.players && revealedCols.size <= state.currentUser) {
+    runNextUser();
+  }
+}
+function confirmExit() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  goHome();
+}
+function closeModal(e) { if (e.target.id === 'modal-overlay') hideModal(); }
+
+// ══════════════════════════════════════════════
+//  CONFETTI
+// ══════════════════════════════════════════════
+function launchConfetti() {
+  const app = document.getElementById('app');
+  const colors = ['#EB5E75','#F6DDDA','#ff9999','#ffb3c1','#fff'];
+  for (let i = 0; i < 22; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    el.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${20 + Math.random()*30}%;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      animation-delay:${Math.random()*0.4}s;
+      animation-duration:${0.6+Math.random()*0.5}s;
+    `;
+    app.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+  }
+}
+
+// ══════════════════════════════════════════════
+//  CANVAS RESIZE
+// ══════════════════════════════════════════════
+function resizeCanvas(id) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const rect = canvas.getBoundingClientRect();
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+}
+
+window.addEventListener('resize', () => {
+  if (state.currentScreen === 's2' && state.ladderData) {
+    resizeCanvas('ladder-canvas');
+    drawLadder('ladder-canvas', state.ladderData, state.players, -1, revealedCols);
+  }
+  if (state.currentScreen === 's4' && state.ladderData) {
+    resizeCanvas('replay-canvas');
+    drawReplay(state.replayUser);
+  }
+});
+</script>
+</body>
+</html>
