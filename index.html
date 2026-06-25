@@ -634,17 +634,9 @@ function generateLadder(n, winCount) {
     const path = [{ col: cur, row: 0 }];
     for (let r = 0; r < rows.length; r++) {
       const rungs = rows[r];
-      if (rungs.includes(cur)) {
-        path.push({ col: cur, row: r+1 }); // 수직 하강
-        cur += 1;
-        path.push({ col: cur, row: r+1 }); // 수평 이동(우)
-      } else if (rungs.includes(cur - 1)) {
-        path.push({ col: cur, row: r+1 }); // 수직 하강
-        cur -= 1;
-        path.push({ col: cur, row: r+1 }); // 수평 이동(좌)
-      } else {
-        path.push({ col: cur, row: r+1 });
-      }
+      if (rungs.includes(cur)) { cur += 1; path.push({ col: cur, row: r+1, dir: 'right' }); }
+      else if (rungs.includes(cur - 1)) { cur -= 1; path.push({ col: cur, row: r+1, dir: 'left' }); }
+      else { path.push({ col: cur, row: r+1 }); }
     }
     paths[col] = path;
     finalDest[col] = cur;
